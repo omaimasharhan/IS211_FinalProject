@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Book Collection</title>
+    <link rel="stylesheet" href="static/styles.css"> <!-- Include any CSS styles -->
+</head>
+<body>
+    <h1>Your Book Collection</h1>
+    <div class="book-list">
+        {% if books %}
+            <table>
+                <!-- Display user's books in a table -->
+            </table>
+        {% else %}
+            <p>No books saved yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
