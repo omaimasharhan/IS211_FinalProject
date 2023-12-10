@@ -1,15 +1,41 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Set a secret key for sessions
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
-# Database connection
-conn = sqlite3.connect('database.db')
+db = SQLAlchemy(app)
 
-# HTML templates directory
-app.config['TEMPLATES_AUTO_RELOAD'] = True
+# Define your models (e.g., User, UserBook)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(100))
 
+class UserBook(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200))
+    author = db.Column(db.String(200))
+    page_count = db.Column(db.Integer)
+    average_rating = db.Column(db.Float)
+    user_id = db.Column(db.String(100))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and password == user.password:
+            session['logged_in'] = True
+            session['username'] = username
+            return redirect(url_for('user_books'))
+        else:
+            return render_template('login.html', error='Invalid credentials')
+
+    return render_template('login.html')
 
 @app.route('/')
 def index():
@@ -17,34 +43,11 @@ def index():
         return redirect(url_for('user_books'))
     return redirect(url_for('login'))
 
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        print("Received username:", username)
-        print("Received password:", password)
-
-        # Validate user credentials (dummy authentication, replace with actual logic)
-        if username == 'user' and password == 'password':
-            session['logged_in'] = True
-            session['username'] = username
-            print("Login successful!")
-            return redirect(url_for('user_books'))
-        else:
-            print("Login failed. Invalid credentials!")
-            return render_template('login.html', error='Invalid credentials')
-
-    return render_template('login.html')
-
-
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
     return redirect(url_for('login'))
-
 
 @app.route('/user_books', methods=['GET', 'POST'])
 def user_books():
@@ -52,11 +55,7 @@ def user_books():
         if request.method == 'POST':
             isbn = request.form['isbn']
 
-            # Implement API call to Google Books using the provided ISBN
-            # Retrieve book details and store them in the database
-            # Display appropriate error if API call fails or book details aren't found
-
-            # Dummy book data (replace with actual data fetched from API)
+            # Logic to fetch book details from an API (placeholder)
             book_data = {
                 'title': 'Book Title',
                 'author': 'Author Name',
@@ -64,28 +63,28 @@ def user_books():
                 'average_rating': 4.5
             }
 
-            # Store book data in the database for the logged-in user
-            insert_query = """
-                INSERT INTO user_books (title, author, page_count, average_rating, user_id)
-                VALUES (?, ?, ?, ?, ?)
-            """
-            conn.execute(insert_query, (book_data['title'], book_data['author'], book_data['page_count'],
-                                        book_data['average_rating'], session['username']))
-            conn.commit()
+            # Create a new book object and add it to the database
+            new_book = UserBook(
+                title=book_data['title'],
+                author=book_data['author'],
+                page_count=book_data['page_count'],
+                average_rating=book_data['average_rating'],
+                user_id=session['username']  # Assuming user_id here is the username
+            )
+            db.session.add(new_book)
+            db.session.commit()
+
             return redirect(url_for('user_books'))
 
         else:
-            # Fetch and display user's books from the database
-            select_query = """
-                SELECT title, author, page_count, average_rating FROM user_books
-                WHERE user_id = ?
-            """
-            books_cursor = conn.execute(select_query, (session['username'],))
-            user_books = books_cursor.fetchall()
+            user_books = UserBook.query.filter_by(user_id=session['username']).all()
             return render_template('user_books.html', books=user_books)
     else:
         return redirect(url_for('login'))
 
+
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
