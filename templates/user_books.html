@@ -9,7 +9,24 @@
     <div class="book-list">
         {% if books %}
             <table>
-                <!-- Display user's books in a table -->
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Page Count</th>
+                        <th>Average Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                        <tr>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.author }}</td>
+                            <td>{{ book.page_count }}</td>
+                            <td>{{ book.average_rating }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         {% else %}
             <p>No books saved yet.</p>
