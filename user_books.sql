@@ -5,8 +5,10 @@ CREATE TABLE user_books (
     author TEXT NOT NULL,
     page_count INTEGER,
     average_rating REAL,
+    isbn TEXT,  -- Add ISBN field
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
 
 
 CREATE TABLE users (

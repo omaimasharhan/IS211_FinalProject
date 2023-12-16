@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>User's Book Collection</title>
     <style>
         /* CSS styles for user_books.html */
-
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -74,7 +72,6 @@
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h1>{{ user_name }}'s Book Collection</h1>
@@ -107,7 +104,17 @@
         <div class="back-btn">
             <a href="{{ url_for('dashboard') }}" class="btn">Go Back</a>
         </div>
+
+        <!-- Display Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
     </div>
 </body>
-
 </html>

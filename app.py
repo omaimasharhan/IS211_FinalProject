@@ -1,25 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.secret_key = 'my_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
-
+migrate = Migrate(app, db)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
-
-with app.app_context():
-    user = User.query.filter_by(username='adam').first()
-    if not user:
-        hashed_password = generate_password_hash('password123')
-        new_user = User(username='adam', password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
 
 class UserBook(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,10 +21,20 @@ class UserBook(db.Model):
     page_count = db.Column(db.Integer)
     average_rating = db.Column(db.REAL)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    isbn = db.Column(db.String(20))
 
+with app.app_context():
+    db.create_all()
+    user = User.query.filter_by(username='adam').first()
+    if not user:
+        hashed_password = generate_password_hash('password123')
+        new_user = User(username='adam', password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
 
-    def __repr__(self):
-        return f'<UserBook {self.title}>'
+    if not hasattr(UserBook, 'isbn'):
+        db.engine.execute('ALTER TABLE user_books ADD COLUMN isbn TEXT;')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -62,11 +65,12 @@ def login():
 @app.route('/dashboard')
 def dashboard():
     if 'logged_in' in session:
-        # Fetch user's saved books
         user_books = UserBook.query.filter_by(user_id=session['username']).all()
+        if not user_books:
+            flash('No books found in your collection. Add some books!', 'info')
         return render_template('dashboard.html', books=user_books)
     else:
-        flash('Please login to view your dashboard', 'error')
+        flash('Please log in to view your dashboard', 'error')
         return redirect(url_for('login'))
 
 
@@ -100,46 +104,6 @@ def delete_book(book_id):
     return redirect(url_for('user_books'))
 
 
-import requests
-
-
-@app.route('/user_books', methods=['GET', 'POST'])
-def user_books():
-    if 'logged_in' in session:
-        user_name = session['username']
-        if request.method == 'POST':
-            isbn = request.form['isbn']
-
-            # Fetch book details from the Google Books API using the provided ISBN
-            book_data = fetch_book_details(isbn)
-
-            if book_data:
-                # Create a new book object and add it to the database
-                new_book = UserBook(
-                    title=book_data.get('title'),
-                    author=book_data.get('author'),
-                    page_count=book_data.get('page_count'),
-                    average_rating=book_data.get('average_rating'),
-                    user_id=session['username']  # Assuming user_id here is the username
-                )
-
-                try:
-                    db.session.add(new_book)
-                    db.session.commit()
-                    flash('Book added successfully', 'success')
-                except Exception as e:
-                    print("Error adding book:", e)
-                    flash('Error adding book', 'error')
-
-            return redirect(url_for('user_books'))
-
-        else:
-            user_books = UserBook.query.filter_by(user_id=session['username']).all()
-            print("Books retrieved from the database:", user_books)
-            return render_template('user_books.html',  user_name=user_name, books=user_books)
-    else:
-        return redirect(url_for('login'))
-
 def fetch_book_details(isbn):
     google_books_api_url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
 
@@ -155,9 +119,49 @@ def fetch_book_details(isbn):
                 'page_count': book_info.get('pageCount'),
                 'average_rating': book_info.get('averageRating') if 'averageRating' in book_info else 0.0,
             }
-
     return None
 
+@app.route('/user_books', methods=['GET', 'POST'])
+def user_books():
+    if 'logged_in' in session:
+        user_name = session['username']
+
+        if request.method == 'POST':
+            isbn = request.form['isbn']
+            existing_book = UserBook.query.filter_by(user_id=session['username'], isbn=isbn).first()
+
+            if existing_book:
+                flash('Book already exists in your collection', 'error')
+            else:
+                book_data = fetch_book_details(isbn)
+
+                if book_data:
+                    new_book = UserBook(
+                        title=book_data.get('title'),
+                        author=book_data.get('author'),
+                        page_count=book_data.get('page_count'),
+                        average_rating=book_data.get('average_rating'),
+                        user_id=session['username'],
+                        isbn=isbn
+                    )
+
+                    try:
+                        db.session.add(new_book)
+                        db.session.commit()
+                        flash('Book added successfully', 'success')
+                    except Exception as e:
+                        print("Error adding book:", e)
+                        flash('Error adding book', 'error')
+                else:
+                    flash('Book not found or invalid ISBN', 'error')
+
+            return redirect(url_for('user_books'))
+
+        else:
+            user_books = UserBook.query.filter_by(user_id=session['username']).all()
+            return render_template('user_books.html', user_name=user_name, books=user_books)
+    else:
+        return redirect(url_for('login'))
 
 with app.app_context():
     db.create_all()
