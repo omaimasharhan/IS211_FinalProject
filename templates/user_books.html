@@ -1,36 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Your Book Collection</title>
-    <link rel="stylesheet" href="static/styles.css"> <!-- Include any CSS styles -->
+    <meta charset="UTF-8">
+    <title>User's Book Collection</title>
+    <style>
+        /* CSS styles for user_books.html */
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .back-btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Your Book Collection</h1>
-    <div class="book-list">
-        {% if books %}
-            <table>
-                <thead>
+    <div class="container">
+        <h1>{{ user_name }}'s Book Collection</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Page Count</th>
+                    <th>Average Rating</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
                     <tr>
-                        <th>Title</th>
-                        <th>Author</th>
-                        <th>Page Count</th>
-                        <th>Average Rating</th>
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>{{ book.page_count }}</td>
+                        <td>{{ book.average_rating }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('delete_book', book_id=book.id) }}">
+                                <input type="submit" value="Delete" class="btn">
+                            </form>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for book in books %}
-                        <tr>
-                            <td>{{ book.title }}</td>
-                            <td>{{ book.author }}</td>
-                            <td>{{ book.page_count }}</td>
-                            <td>{{ book.average_rating }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No books saved yet.</p>
-        {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="back-btn">
+            <a href="{{ url_for('dashboard') }}" class="btn">Go Back</a>
+        </div>
     </div>
 </body>
+
 </html>

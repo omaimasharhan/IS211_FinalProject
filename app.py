@@ -62,11 +62,13 @@ def login():
 @app.route('/dashboard')
 def dashboard():
     if 'logged_in' in session:
-        print("Rendering dashboard")
-        return render_template('dashboard.html')
+        # Fetch user's saved books
+        user_books = UserBook.query.filter_by(user_id=session['username']).all()
+        return render_template('dashboard.html', books=user_books)
     else:
-        print("Redirecting to login")
+        flash('Please login to view your dashboard', 'error')
         return redirect(url_for('login'))
+
 
 @app.route('/')
 def index():
@@ -79,45 +81,82 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
+import requests
+
+
+@app.route('/delete/<int:book_id>', methods=['GET', 'POST'])
+def delete_book(book_id):
+    if 'logged_in' in session:
+        book_to_delete = UserBook.query.get(book_id)
+        if book_to_delete:
+            db.session.delete(book_to_delete)
+            db.session.commit()
+            flash('Book deleted successfully', 'success')
+        else:
+            flash('Book not found', 'error')
+    else:
+        flash('Please log in to delete books', 'error')
+
+    return redirect(url_for('user_books'))
+
+
+import requests
+
+
 @app.route('/user_books', methods=['GET', 'POST'])
 def user_books():
     if 'logged_in' in session:
+        user_name = session['username']
         if request.method == 'POST':
             isbn = request.form['isbn']
 
-            # Logic to fetch book details from an API (placeholder)
-            book_data = {
-                'title': 'Book Title',
-                'author': 'Author Name',
-                'page_count': 300,
-                'average_rating': 4.5
-            }
+            # Fetch book details from the Google Books API using the provided ISBN
+            book_data = fetch_book_details(isbn)
 
-            # Create a new book object and add it to the database
-            new_book = UserBook(
-                title=book_data['title'],
-                author=book_data['author'],
-                page_count=book_data['page_count'],
-                average_rating=book_data['average_rating'],
-                user_id=session['username']  # Assuming user_id here is the username
-            )
-            try:
-                db.session.add(new_book)
-                db.session.commit()
-                print("Book added to the database")
-            except Exception as e:
-                print("Error adding book:", e)
+            if book_data:
+                # Create a new book object and add it to the database
+                new_book = UserBook(
+                    title=book_data.get('title'),
+                    author=book_data.get('author'),
+                    page_count=book_data.get('page_count'),
+                    average_rating=book_data.get('average_rating'),
+                    user_id=session['username']  # Assuming user_id here is the username
+                )
+
+                try:
+                    db.session.add(new_book)
+                    db.session.commit()
+                    flash('Book added successfully', 'success')
+                except Exception as e:
+                    print("Error adding book:", e)
+                    flash('Error adding book', 'error')
 
             return redirect(url_for('user_books'))
 
         else:
             user_books = UserBook.query.filter_by(user_id=session['username']).all()
             print("Books retrieved from the database:", user_books)
-            return render_template('user_books.html', books=user_books)
+            return render_template('user_books.html',  user_name=user_name, books=user_books)
     else:
         return redirect(url_for('login'))
 
+def fetch_book_details(isbn):
+    google_books_api_url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
 
+    response = requests.get(google_books_api_url)
+
+    if response.status_code == 200:
+        book_data = response.json()
+        if 'items' in book_data and len(book_data['items']) > 0:
+            book_info = book_data['items'][0]['volumeInfo']
+            return {
+                'title': book_info.get('title'),
+                'author': book_info.get('authors')[0] if 'authors' in book_info else 'Unknown Author',
+                'page_count': book_info.get('pageCount'),
+                'average_rating': book_info.get('averageRating') if 'averageRating' in book_info else 0.0,
+            }
+
+    return None
 
 
 with app.app_context():
@@ -125,3 +164,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run(debug=True)
+

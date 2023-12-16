@@ -1,56 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Dashboard</title>
-    <!-- Include CSS stylesheets or link to external styles -->
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .user-greeting {
+            margin-bottom: 20px;
+        }
+        .buttons {
+            margin-bottom: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        input[type="text"] {
+            padding: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome, User!</h1>
-        <!-- Navigation links or user profile options -->
-        <nav>
-            <ul>
-                <li><a href="#">Profile</a></li>
-                <li><a href="#">Settings</a></li>
-                <li><a href="#">Logout</a></li>
-            </ul>
-        </nav>
-    </header>
+    <h1>Welcome to Your Dashboard</h1>
 
-    <main>
-        <section class="summary">
-            <!-- Summary information or statistics -->
-            <h2>Summary</h2>
-            <p>Total Books: 50</p>
-            <p>Favorite Genre: Mystery</p>
-            <!-- Add more summary elements -->
-        </section>
+    <!-- User Greeting -->
+    <p class="user-greeting">Hello, {{ session['username'] }}!</p>
 
-        <section class="widgets">
-            <!-- Widgets or cards displaying specific information -->
-            <div class="widget">
-                <h2>Recent Activity</h2>
-                <ul>
-                    <li>Book added: "Title 1"</li>
-                    <li>Book added: "Title 2"</li>
-                    <!-- Add more activity items -->
-                </ul>
-            </div>
-            <div class="widget">
-                <h2>Tasks</h2>
-                <ul>
-                    <li>Read "Book 3"</li>
-                    <li>Review "Book 4"</li>
-                    <!-- Add more tasks -->
-                </ul>
-            </div>
-            <!-- Add more widgets or cards -->
-        </section>
-    </main>
+    <!-- Buttons -->
+    <div class="buttons">
+        <a href="/user_books">
+            <button>My Books</button>
+        </a>
+        <a href="/logout">
+            <button>Logout</button>
+        </a>
+    </div>
 
-    <footer>
-        <p>&copy; 2023 Your Website</p>
-    </footer>
+    <!-- ISBN Search Form -->
+    <form method="POST" action="/user_books">
+        <label for="isbn">Enter ISBN:</label>
+        <input type="text" id="isbn" name="isbn" required>
+        <button type="submit">Search</button>
+    </form>
 </body>
 </html>
+
