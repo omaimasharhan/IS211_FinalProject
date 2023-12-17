@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'my_secret_key'
@@ -9,6 +10,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Define User and UserBook models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
@@ -23,6 +25,7 @@ class UserBook(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     isbn = db.Column(db.String(20))
 
+# Create the database tables and add an initial user
 with app.app_context():
     db.create_all()
     user = User.query.filter_by(username='adam').first()
@@ -32,10 +35,11 @@ with app.app_context():
         db.session.add(new_user)
         db.session.commit()
 
-    if not hasattr(UserBook, 'isbn'):
-        db.engine.execute('ALTER TABLE user_books ADD COLUMN isbn TEXT;')
+        # Add column 'isbn' to UserBook if it doesn't exist
+        if not hasattr(UserBook, 'isbn'):
+            db.engine.execute('ALTER TABLE user_book ADD COLUMN isbn TEXT;')
 
-
+# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -58,36 +62,35 @@ def login():
         else:
             error = 'Invalid username or password'
             flash(error, 'error')
+            return render_template('login.html', error=error)
 
     return render_template('login.html', error=error)
 
-
+# Dashboard route
 @app.route('/dashboard')
 def dashboard():
+    error = None
     if 'logged_in' in session:
         user_books = UserBook.query.filter_by(user_id=session['username']).all()
-        if not user_books:
-            flash('No books found in your collection. Add some books!', 'info')
-        return render_template('dashboard.html', books=user_books)
+        return render_template('dashboard.html', books=user_books, error=error)
     else:
-        flash('Please log in to view your dashboard', 'error')
+        error = 'Please login to view your dashboard'
+        flash(error, 'error')
         return redirect(url_for('login'))
 
-
+# Index route
 @app.route('/')
 def index():
     return redirect(url_for('login'))
 
-
+# Logout route
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
     return redirect(url_for('login'))
 
-import requests
-
-
+# Delete book route
 @app.route('/delete/<int:book_id>', methods=['GET', 'POST'])
 def delete_book(book_id):
     if 'logged_in' in session:
@@ -103,10 +106,9 @@ def delete_book(book_id):
 
     return redirect(url_for('user_books'))
 
-
+# Function to fetch book details from Google Books API
 def fetch_book_details(isbn):
     google_books_api_url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
-
     response = requests.get(google_books_api_url)
 
     if response.status_code == 200:
@@ -121,6 +123,7 @@ def fetch_book_details(isbn):
             }
     return None
 
+# User books route
 @app.route('/user_books', methods=['GET', 'POST'])
 def user_books():
     if 'logged_in' in session:
@@ -155,7 +158,7 @@ def user_books():
                 else:
                     flash('Book not found or invalid ISBN', 'error')
 
-            return redirect(url_for('user_books'))
+            return redirect(url_for('dashboard'))
 
         else:
             user_books = UserBook.query.filter_by(user_id=session['username']).all()
@@ -163,9 +166,5 @@ def user_books():
     else:
         return redirect(url_for('login'))
 
-with app.app_context():
-    db.create_all()
-
 if __name__ == '__main__':
     app.run(debug=True)
-

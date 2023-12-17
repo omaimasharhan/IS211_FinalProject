@@ -41,6 +41,13 @@
         button:hover {
             background-color: #0056b3;
         }
+        .error-message {
+            background-color: #ff9999;
+            color: #cc0000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -48,6 +55,13 @@
 
     <!-- User Greeting -->
     <p class="user-greeting">Hello, {{ session['username'] }}!</p>
+
+    <!-- Display Error Messages -->
+    {% if error %}
+        <div class="error-message">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
 
     <!-- Buttons -->
     <div class="buttons">
@@ -71,7 +85,9 @@
         {% if messages %}
             <ul>
                 {% for message in messages %}
-                    <li>{{ message }}</li>
+                    {% if message != 'Invalid username or password' %}
+                        <li>{{ message }}</li>
+                    {% endif %}
                 {% endfor %}
             </ul>
         {% endif %}
