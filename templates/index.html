@@ -7,14 +7,12 @@
 <body>
     <h1>Welcome to Your Book Catalogue</h1>
 
-    <!-- Search Form -->
     <form action="/user_books" method="POST">
         <label for="isbn">Search by ISBN:</label>
         <input type="text" id="isbn" name="isbn" required>
         <button type="submit">Search</button>
     </form>
 
-    <!-- Display User's Books -->
     <h2>Your Saved Books</h2>
     <div class="book-list">
         {% if books %}

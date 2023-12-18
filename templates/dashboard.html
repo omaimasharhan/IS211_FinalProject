@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Dashboard</title>
     <style>
-        /* CSS styles for the dashboard */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -102,10 +101,8 @@
     <div class="container">
         <h1>Welcome to Your Dashboard</h1>
 
-        <!-- User Greeting -->
         <p class="user-greeting">Hello, {{ session['username'] }}!</p>
 
-        <!-- Buttons Section -->
         <div class="dashboard-section buttons">
             <a href="/user_books" class="dashboard-link">
                 <button>My Books</button>
@@ -115,7 +112,6 @@
             </a>
         </div>
 
-        <!-- ISBN Search Form Section -->
         <div class="dashboard-section search-form">
             <form method="POST" action="/user_books">
                 <label for="isbn">Enter ISBN:</label>
@@ -124,14 +120,12 @@
             </form>
         </div>
 
-        <!-- Display Error Messages -->
         {% if error %}
             <div class="dashboard-section error-message">
                 <p>{{ error }}</p>
             </div>
         {% endif %}
 
-        <!-- Display Messages -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <ul class="dashboard-section flash-messages">

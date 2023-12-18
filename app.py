@@ -10,7 +10,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Define User and UserBook models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
@@ -28,7 +27,6 @@ class UserBook(db.Model):
 with app.app_context():
     db.create_all()
 
-    # List of users to create/check
     users_to_create = [
         {'username': 'adam', 'password': 'password123'},
         {'username': 'sarah', 'password': 'sa2024'},
@@ -47,9 +45,6 @@ with app.app_context():
     if not hasattr(UserBook, 'isbn'):
         db.engine.execute('ALTER TABLE user_book ADD COLUMN isbn TEXT;')
 
-# Login route
-# Login route
-# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -63,7 +58,6 @@ def login():
             session['logged_in'] = True
             session['username'] = username
 
-            # Clear all flashes before redirecting
             session.pop('_flashes', None)
 
             flash('Login successful', 'success')
@@ -85,19 +79,16 @@ def dashboard():
         flash(error, 'error')
         return redirect(url_for('login'))
 
-# Index route
 @app.route('/')
 def index():
     return redirect(url_for('login'))
 
-# Logout route
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
     return redirect(url_for('login'))
 
-# Delete book route
 @app.route('/delete/<int:book_id>', methods=['GET', 'POST'])
 def delete_book(book_id):
     if 'logged_in' in session:
@@ -144,7 +135,6 @@ def user_books():
                 book_data = fetch_book_details(isbn)
 
                 if book_data:
-                    # Create and add the new book
                     new_book = UserBook(
                         title=book_data.get('title'),
                         author=book_data.get('author'),
