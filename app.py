@@ -25,20 +25,30 @@ class UserBook(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     isbn = db.Column(db.String(20))
 
-# Create the database tables and add an initial user
 with app.app_context():
     db.create_all()
-    user = User.query.filter_by(username='adam').first()
-    if not user:
-        hashed_password = generate_password_hash('password123')
-        new_user = User(username='adam', password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
 
-        # Add column 'isbn' to UserBook if it doesn't exist
-        if not hasattr(UserBook, 'isbn'):
-            db.engine.execute('ALTER TABLE user_book ADD COLUMN isbn TEXT;')
+    # List of users to create/check
+    users_to_create = [
+        {'username': 'adam', 'password': 'password123'},
+        {'username': 'sarah', 'password': 'sa2024'},
+        {'username': 'noah', 'password': 'python01'}
+    ]
 
+    for user_data in users_to_create:
+        user = User.query.filter_by(username=user_data['username']).first()
+        if not user:
+            hashed_password = generate_password_hash(user_data['password'])
+            new_user = User(username=user_data['username'], password=hashed_password)
+            db.session.add(new_user)
+
+    db.session.commit()
+
+    if not hasattr(UserBook, 'isbn'):
+        db.engine.execute('ALTER TABLE user_book ADD COLUMN isbn TEXT;')
+
+# Login route
+# Login route
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -50,23 +60,20 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
-            if username != 'adam':
-                error = "You can only log in as 'adam'"
-                flash(error, 'error')
-                return render_template('login.html', error=error)
-
             session['logged_in'] = True
             session['username'] = username
+
+            # Clear all flashes before redirecting
+            session.pop('_flashes', None)
+
             flash('Login successful', 'success')
             return redirect(url_for('dashboard'))
         else:
             error = 'Invalid username or password'
             flash(error, 'error')
-            return render_template('login.html', error=error)
 
     return render_template('login.html', error=error)
 
-# Dashboard route
 @app.route('/dashboard')
 def dashboard():
     error = None
@@ -106,7 +113,6 @@ def delete_book(book_id):
 
     return redirect(url_for('user_books'))
 
-# Function to fetch book details from Google Books API
 def fetch_book_details(isbn):
     google_books_api_url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
     response = requests.get(google_books_api_url)
@@ -123,15 +129,14 @@ def fetch_book_details(isbn):
             }
     return None
 
-# User books route
 @app.route('/user_books', methods=['GET', 'POST'])
 def user_books():
     if 'logged_in' in session:
-        user_name = session['username']
+        user_id = session['username']
 
         if request.method == 'POST':
             isbn = request.form['isbn']
-            existing_book = UserBook.query.filter_by(user_id=session['username'], isbn=isbn).first()
+            existing_book = UserBook.query.filter_by(user_id=user_id, isbn=isbn).first()
 
             if existing_book:
                 flash('Book already exists in your collection', 'error')
@@ -139,12 +144,13 @@ def user_books():
                 book_data = fetch_book_details(isbn)
 
                 if book_data:
+                    # Create and add the new book
                     new_book = UserBook(
                         title=book_data.get('title'),
                         author=book_data.get('author'),
                         page_count=book_data.get('page_count'),
                         average_rating=book_data.get('average_rating'),
-                        user_id=session['username'],
+                        user_id=user_id,
                         isbn=isbn
                     )
 
@@ -161,8 +167,8 @@ def user_books():
             return redirect(url_for('dashboard'))
 
         else:
-            user_books = UserBook.query.filter_by(user_id=session['username']).all()
-            return render_template('user_books.html', user_name=user_name, books=user_books)
+            user_books = UserBook.query.filter_by(user_id=user_id).all()
+            return render_template('user_books.html', user_name=user_id, books=user_books)
     else:
         return redirect(url_for('login'))
 

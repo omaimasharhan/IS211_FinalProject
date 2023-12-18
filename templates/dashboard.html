@@ -7,38 +7,78 @@
         /* CSS styles for the dashboard */
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
             margin: 20px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
         }
         h1 {
             color: #333;
+            margin-bottom: 20px;
         }
         .user-greeting {
             margin-bottom: 20px;
         }
+        .dashboard-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .dashboard-section:last-child {
+            border-bottom: none;
+        }
         .buttons {
             margin-bottom: 20px;
+            text-align: left;
         }
-        form {
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
+        .buttons a {
+            text-decoration: none;
             margin-right: 10px;
         }
-        input[type="text"] {
-            padding: 5px;
-            font-size: 16px;
-        }
-        button {
+        .buttons button {
             padding: 8px 15px;
             font-size: 16px;
             background-color: #007bff;
             color: white;
             border: none;
             cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .buttons button:hover {
+            background-color: #0056b3;
+        }
+        .search-form {
+            text-align: left;
+        }
+        .search-form label {
+            font-weight: bold;
             margin-right: 10px;
         }
-        button:hover {
+        .search-form input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .search-form button {
+            padding: 8px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .search-form button:hover {
             background-color: #0056b3;
         }
         .error-message {
@@ -48,49 +88,59 @@
             border-radius: 5px;
             margin-bottom: 15px;
         }
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .flash-messages li {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to Your Dashboard</h1>
+    <div class="container">
+        <h1>Welcome to Your Dashboard</h1>
 
-    <!-- User Greeting -->
-    <p class="user-greeting">Hello, {{ session['username'] }}!</p>
+        <!-- User Greeting -->
+        <p class="user-greeting">Hello, {{ session['username'] }}!</p>
 
-    <!-- Display Error Messages -->
-    {% if error %}
-        <div class="error-message">
-            <p>{{ error }}</p>
+        <!-- Buttons Section -->
+        <div class="dashboard-section buttons">
+            <a href="/user_books" class="dashboard-link">
+                <button>My Books</button>
+            </a>
+            <a href="/logout" class="dashboard-link">
+                <button>Logout</button>
+            </a>
         </div>
-    {% endif %}
 
-    <!-- Buttons -->
-    <div class="buttons">
-        <a href="/user_books">
-            <button>My Books</button>
-        </a>
-        <a href="/logout">
-            <button>Logout</button>
-        </a>
-    </div>
+        <!-- ISBN Search Form Section -->
+        <div class="dashboard-section search-form">
+            <form method="POST" action="/user_books">
+                <label for="isbn">Enter ISBN:</label>
+                <input type="text" id="isbn" name="isbn" required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
 
-    <!-- ISBN Search Form -->
-    <form method="POST" action="/user_books">
-        <label for="isbn">Enter ISBN:</label>
-        <input type="text" id="isbn" name="isbn" required>
-        <button type="submit">Search</button>
-    </form>
-
-    <!-- Display Messages -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    {% if message != 'Invalid username or password' %}
-                        <li>{{ message }}</li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
+        <!-- Display Error Messages -->
+        {% if error %}
+            <div class="dashboard-section error-message">
+                <p>{{ error }}</p>
+            </div>
         {% endif %}
-    {% endwith %}
+
+        <!-- Display Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="dashboard-section flash-messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
 </body>
 </html>
